@@ -4,9 +4,6 @@
 
 曲谱全部保存在本机浏览器数据库中——不上传服务器、无账号、无广告、离线可用。
 
-> 灵感来自对 Android 应用「有谱」(com.bandscore.band_score_reader) 运作模式的拆解，
-> **代码与界面为全新原创实现**，二者无任何代码或资源关系。
-
 ![曲库](docs/screenshots/01-library.png)
 ![看谱器](docs/screenshots/02-viewer.png)
 
