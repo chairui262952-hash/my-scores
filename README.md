@@ -171,6 +171,8 @@ npx cap open android   # Android Studio 里 Build APK
 |---|---|---|---|
 | [pdf.js](https://github.com/mozilla/pdf.js) | 3.11.174 | Apache-2.0 | PDF 谱渲染（本地内置，非 CDN） |
 
+详见 [THIRD-PARTY.md](THIRD-PARTY.md)。
+
 ---
 
 ## License
