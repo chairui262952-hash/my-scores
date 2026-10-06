@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e12">
+<title>我的谱架</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="stylesheet" href="./css/style.css">
+<script>
+/* 全局错误捕获：便于远程调试（window.__errs） */
+window.__errs = [];
+window.addEventListener("error", e => window.__errs.push(e.message + " @ " + (e.filename || "") + ":" + (e.lineno || "")));
+window.addEventListener("unhandledrejection", e => window.__errs.push("rej: " + ((e.reason && e.reason.message) || e.reason)));
+</script>
+</head>
+<body>
+
+<!-- ========== 曲谱库 ========== -->
+<section id="screen-library" class="screen">
+  <header class="lib-header">
+    <div class="lib-title-row">
+      <div>
+        <h1>我的谱架</h1>
+        <p class="lib-sub" id="lib-sub"></p>
+      </div>
+      <div class="lib-actions">
+        <button id="btn-setlists" class="icon-btn" title="曲单">☰</button>
+        <button id="btn-settings" class="icon-btn" title="设置">⚙</button>
+      </div>
+    </div>
+    <div class="chips" id="lib-chips">
+      <button class="chip active" data-f="all">全部</button>
+      <button class="chip" data-f="fav">★ 收藏</button>
+      <button class="chip" data-f="text">文本谱</button>
+    </div>
+    <div class="lib-toolbar">
+      <input id="search" type="search" placeholder="搜索曲名 / 标签…" autocomplete="off">
+      <button id="btn-new-text" class="small" title="新建文本和弦谱">🅃</button>
+      <button id="btn-import" class="primary">＋ 导入</button>
+      <input id="file-input" type="file" multiple accept="application/pdf,image/*" hidden>
+    </div>
+  </header>
+  <main id="lib-grid" class="lib-grid"></main>
+  <div id="lib-empty" class="lib-empty" hidden>
+    <div class="empty-icon">🎼</div>
+    <p>曲谱库还是空的</p>
+    <p class="sub">点「＋ 导入」选择 PDF 或图片谱<br>网页上的和弦谱可以复制后用 🅃 粘贴，还能移调</p>
+  </div>
+</section>
+
+<!-- ========== 曲单 ========== -->
+<section id="screen-setlists" class="screen" hidden>
+  <header class="sub-header">
+    <button class="icon-btn back" data-nav="#/library">‹</button>
+    <h2>曲单</h2>
+    <button id="btn-new-setlist" class="primary small">新建</button>
+  </header>
+  <main id="setlist-list" class="plain-list"></main>
+  <main id="setlist-detail" class="plain-list" hidden></main>
+</section>
+
+<!-- ========== 设置 ========== -->
+<section id="screen-settings" class="screen" hidden>
+  <header class="sub-header">
+    <button class="icon-btn back" data-nav="#/library">‹</button>
+    <h2>设置</h2>
+    <span></span>
+  </header>
+  <main class="settings-body">
+    <div class="card">
+      <h3>外观</h3>
+      <div class="row"><label>主题</label>
+        <select id="set-theme"><option value="dark">深色</option><option value="light">浅色</option></select>
+      </div>
+    </div>
+    <div class="card">
+      <h3>看谱</h3>
+      <div class="row"><label>默认自动滚动速度（像素/秒）</label>
+        <input id="set-speed" type="number" min="10" max="400" step="5" style="width:90px">
+      </div>
+      <div class="row"><label>下一页键（踏板）</label>
+        <button id="cap-next" class="key-capture">点击捕获</button>
+      </div>
+      <div class="row"><label>上一页键（踏板）</label>
+        <button id="cap-prev" class="key-capture">点击捕获</button>
+      </div>
+      <p class="hint">蓝牙翻页踏板会模拟键盘按键，把它的按键映射到这里即可翻页。默认支持 → / ← / PageDown / PageUp / 空格。</p>
+    </div>
+    <div class="card">
+      <h3>在线找谱</h3>
+      <div class="row"><label>Ultimate Guitar（英文歌全）</label><a class="small ext" href="https://www.ultimate-guitar.com/search.php?search_type=title&value=" target="_blank" rel="noopener">打开 ↗</a></div>
+      <div class="row"><label>吉他社（中文弹唱谱全）</label><a class="small ext" href="https://www.jitashe.net/" target="_blank" rel="noopener">打开 ↗</a></div>
+      <div class="row"><label>彼岸吉他（谱量大更新快）</label><a class="small ext" href="https://www.52jita.com/" target="_blank" rel="noopener">打开 ↗</a></div>
+      <div class="row"><label>弹琴吧（排版好可试听）</label><a class="small ext" href="https://www.tan8.com/" target="_blank" rel="noopener">打开 ↗</a></div>
+      <p class="hint">下载的 PDF 直接用「＋ 导入」加进来；网页上的和弦谱可以全选复制，用「🅃 文本谱」粘贴保存，还能移调。</p>
+    </div>
+    <div class="card">
+      <h3>数据</h3>
+      <div class="row">
+        <button id="btn-export" class="primary small">导出备份</button>
+        <button id="btn-import-backup" class="small">导入备份</button>
+        <input id="backup-input" type="file" accept=".json" hidden>
+      </div>
+      <p id="storage-info" class="hint"></p>
+    </div>
+    <div class="card">
+      <h3>关于</h3>
+      <p class="hint">「我的谱架」— 为平板弹唱看谱而做的本地曲谱阅读器。<br>
+      曲谱全部保存在本机浏览器数据库中，不上传任何服务器。<br>
+      建议：在浏览器菜单中选择「添加到主屏幕」，即可像 App 一样全屏使用。</p>
+    </div>
+  </main>
+</section>
+
+<!-- ========== 看谱器 ========== -->
+<section id="screen-viewer" class="screen" hidden>
+  <div id="viewer-stage">
+    <div id="pages"></div>
+  </div>
+
+  <div id="tap-left"  class="tapzone" title="上一页"></div>
+  <div id="tap-center" class="tapzone-center" title="显示/隐藏工具条"></div>
+  <div id="tap-right" class="tapzone" title="下一页"></div>
+
+  <div id="viewer-topbar" class="viewer-bar top">
+    <button id="v-back" class="icon-btn">‹</button>
+    <span id="v-title" class="v-title"></span>
+    <span id="v-pageinfo" class="v-pageinfo"></span>
+    <span class="flex-spacer"></span>
+    <button id="v-prev-score" class="icon-btn" title="曲单上一首" hidden>⏮</button>
+    <button id="v-next-score" class="icon-btn" title="曲单下一首" hidden>⏭</button>
+  </div>
+
+  <div id="viewer-bottombar" class="viewer-bar bottom">
+    <button id="v-turn-prev" class="icon-btn big" title="上一页">◀</button>
+    <button id="v-autoscroll" class="icon-btn big" title="自动滚动">▶</button>
+    <input id="v-speed" type="range" min="10" max="300" step="5" title="滚动速度">
+    <button id="v-turn-next" class="icon-btn big" title="下一页">▶</button>
+    <div id="bar-transpose" hidden>
+      <span class="sep"></span>
+      <button id="t-down" class="small" title="降半音">－</button>
+      <span id="t-key" class="chip">C</span>
+      <button id="t-up" class="small" title="升半音">＋</button>
+    </div>
+    <span class="flex-spacer"></span>
+    <button id="v-more" class="icon-btn big" title="更多">⋯</button>
+  </div>
+
+  <!-- 看谱设置面板 -->
+  <div id="sheet-backdrop"></div>
+  <div id="more-sheet" class="viewer-sheet">
+    <div class="sheet-head">
+      <h3>看谱设置</h3>
+      <button id="more-close" class="icon-btn">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="seg" id="mode-seg">
+        <button data-mode="scroll">滚动</button>
+        <button data-mode="page">单页</button>
+        <button data-mode="half">半页</button>
+      </div>
+      <div class="sheet-row">
+        <span class="lab">缩放</span>
+        <span class="ctl">
+          <button id="v-zoom-out" class="small">－</button>
+          <span id="v-zoom-val" class="mini">100%</span>
+          <button id="v-zoom-in" class="small">＋</button>
+        </span>
+      </div>
+      <div class="sheet-row">
+        <span class="lab">亮度</span>
+        <input id="v-bright" class="full" type="range" min="30" max="100">
+      </div>
+      <div class="sheet-row">
+        <span class="lab">夜间反色</span>
+        <label class="switch"><input id="v-invert" type="checkbox"><span class="knob"></span></label>
+      </div>
+      <div class="sheet-row">
+        <span class="lab">屏幕常亮</span>
+        <label class="switch"><input id="v-wakelock" type="checkbox"><span class="knob"></span></label>
+      </div>
+      <div id="sheet-text" hidden>
+        <div class="sheet-divider"></div>
+        <div class="sheet-row">
+          <span class="lab">移调</span>
+          <span class="ctl">
+            <button id="t-reset" class="small">还原</button>
+          </span>
+        </div>
+        <div class="sheet-row">
+          <span class="lab">字号</span>
+          <span class="ctl">
+            <button id="fs-down" class="small">A－</button>
+            <button id="fs-up" class="small">A＋</button>
+          </span>
+        </div>
+      </div>
+      <div class="sheet-divider"></div>
+      <div class="sheet-row">
+        <span class="lab">节拍器</span>
+        <span class="ctl">
+          <button id="m-toggle" class="primary small">开始</button>
+          <input id="m-bpm" type="range" min="30" max="240" step="1" value="80" style="width:110px">
+          <span id="m-bpm-val" class="mini">80</span>
+          <select id="m-beats"><option value="2">2/4</option><option value="3">3/4</option><option value="4" selected>4/4</option><option value="6">6/8</option></select>
+        </span>
+      </div>
+      <button id="v-chords" class="sheet-action">🎸 和弦速查 <span class="arr">›</span></button>
+    </div>
+  </div>
+
+  <!-- 和弦速查面板 -->
+  <div id="chord-panel" class="viewer-sheet">
+    <div class="sheet-head">
+      <h3>和弦速查</h3>
+      <input id="chord-search" type="search" placeholder="过滤和弦，如 Am…">
+      <button id="chord-close" class="icon-btn">✕</button>
+    </div>
+    <div id="song-chords-sec" style="overflow-y:auto">
+      <p class="hint">本曲和弦</p>
+      <div id="song-chords" class="chord-grid" style="max-height:22vh"></div>
+      <p class="hint">全部和弦</p>
+    </div>
+    <div id="chord-grid" class="chord-grid"></div>
+  </div>
+
+  <div id="toast" hidden></div>
+</section>
+
+<script src="./js/vendor/pdf.min.js"></script>
+<script src="./js/db.js"></script>
+<script src="./js/chords.js"></script>
+<script src="./js/metronome.js"></script>
+<script src="./js/library.js"></script>
+<script src="./js/viewer.js"></script>
+<script src="./js/app.js"></script>
+</body>
+</html>
